@@ -14,9 +14,11 @@ const Core = require('./config/core')
 // import settings env
 class AppController {
   constructor () {
-    this.express = express()
     // load express
+    this.express = express()
+    this.app = require('http').createServer(express)
 
+    this.socketIo()
     this.middlewares()
     this.routes()
     this.errorManagement()
@@ -34,6 +36,20 @@ class AppController {
   // import routes to router main
   routes () {
     this.express.use('/api', routesSystem)
+  }
+
+  // configure socketio
+  socketIo () {
+    const io = require('socket.io')(this.app)
+
+    io.on('connection', (socket) => {
+      console.log('Novo cliente conectou:', socket.client.id)
+      socket.emit('connection', 'online')
+
+      socket.on('clienteResponse', (data) => {
+        io.sockets.emit('broadcast', data)
+      })
+    })
   }
 
   // configure errors
@@ -57,4 +73,4 @@ class AppController {
   }
 }
 
-module.exports = new AppController().express
+module.exports = new AppController().app
